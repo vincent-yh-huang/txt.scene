@@ -1,13 +1,12 @@
 /* Current goals:
- *	- implement token structure:
+ *	- implement token structure: !!DONE
  *		- type: token type
  *		- value: token value 
- *			(will _always_ be a string b/c Java typing)
  *		- line: line number
  *	- recognize (or in this case, ignore) single-line comments "//"
  *	- recognize keyword notation "![name]"
  *		- 'val', 'var', and 'include' are particularly important
- *	- recognize word recognization "Lorem ipsum." => 
+ *	- recognize word recognization "Lorem ipsum." => !!DONE
  *		"[	{token1.type = "word", token1.value = "Lorem"}
  *		 ,	{token2.type = "word", token2.value = "ipsum"}
  *		 ]"
@@ -37,8 +36,6 @@ case class TScene() extends TType
 case class TNewLine() extends TType
 case class TParen() extends TType
 
-def test(regex: Regex, char: Char): Boolean = (regex findFirstIn char.toString).nonEmpty
-
 class TToken(t: TType, v: String, l: Int, i: Int) {
 	val tType: TType = t		//token type
 	val tValue: String = v		//token value
@@ -53,6 +50,34 @@ class TToken(t: TType, v: String, l: Int, i: Int) {
 	}
 };
 
+def test(regex: Regex, char: Char): Boolean = (regex findFirstIn char.toString).nonEmpty
+
+case class Failure(reason: String)
+
+def longToken(rRight: Regex, rLeft: Regex = "".r, line: String, 
+	position: Int, lNum: Int, index: Int): Either[Failure, (TToken, Int)] = 
+{
+	var value = ""
+	var pos = position
+	var char = line(pos)
+
+	while (pos < line.length && test(rRight, line(pos))) {
+			//println("\tchar: "+char)
+			//println("\tpos: "+pos)
+		char = line(pos)
+		//checks to see if number is properly defined
+		if (test(rLeft, char)) {
+			var errMsg = ("SYNTAX ERROR: ")
+			errMsg += (f"\t'$value$char' @ $lNum:$index")
+			return Left(Failure(errMsg))
+		}
+		value += char
+		pos += 1
+	}
+	Right((new TToken(TNum(), value, lNum, index), pos))
+}
+
+
 /*	function tokenizer
  *	params:
  *		'input' - Iterator[String] which holds every line from the input
@@ -63,10 +88,10 @@ def tokenizer(input: Iterator[String]) :ListBuffer[TToken] = {
 	var tokenList = ListBuffer[TToken]()
 	var lNum = 0
 	//regex definitions
-	val rParens = "[()]".r
-	val rWhitespace = """[^\S^\n]""".r
-	val rNum = "[0-9]".r
-	val rWord = "[a-zA-Z]".r
+	val rParens = "[()]"
+	val rWhitespace = """[^\S^\n]"""
+	val rNum = "[0-9]"
+	val rWord = """[a-zA-Z\.\,\:\;\!\?\"\'\-]"""
 
 	for( line <- input) {
 		var position = 0
@@ -74,36 +99,62 @@ def tokenizer(input: Iterator[String]) :ListBuffer[TToken] = {
 		while (position < line.length) {
 			var char = line(position)
 				//println("\tchar: " +char)
-				//println(position)
+				//println("\tposition: "+position)
 			index = position
 			//TParens check
-			if (test(rParens, char)) {
+			if (test(rParens.r, char)) {
 					//println("matches parens")
 				var value = char.toString()
 				tokenList += new TToken(TParen(), value, lNum, index)
 				position += 1
 			//Whitespace check
-			} else if (test(rWhitespace, char)) {
+			} else if (test(rWhitespace.r, char)) {
 					//println("matches whitespace")
 				position += 1
 			//TNum() check
-			} else if (test(rNum, char)) {
+			} else if (test(rNum.r, char)) {
+				/*
+				var result =
+					longToken(rNum.r, rWord.r, line, 
+						position, lNum, index) match {
+					case Left(Failure(str)) => Console.err.println(str)
+					case Right((tToken, pos)) => (tToken, pos)
+				}
+				if (result == (TToken, Int)) {
+					tokenList += result._1
+					position = result._2
+				} else {
+					return Iterator()
+				}
+				*/
+				/*
 					//println("matches num")
 				var value = ""
-				while (position < line.length && test("[0-9]".r, char)) {
+				while (position < line.length && test(rNum.r, line(position))) {
 						//println("\tchar: "+char)
 						//println("\tpos: "+position)
 					char = line(position)
-					if (test(rWord, char)) {
-						Console.err.println(f"Error at $value, line $lNum, index $index")
+					//checks to see if number is properly defined
+					if (test(rWord.r, char)) {
+						Console.err.println("SYNTAX ERROR: ")
+						Console.err.println(f"\t'$value$char' @ $lNum:$index")
 						return ListBuffer[TToken]()
 					}
 					value += char
 					position += 1
 				}
 				tokenList += new TToken(TNum(), value, lNum, index)
-			} else if (test(rWord, char)) {
-
+				*/
+			//TWord() check
+			} else if (test(rWord.r, char)) {
+				var value = ""
+				while (position < line.length && test((rWord+rNum).r, line(position))) {
+					//println(value)
+					char = line(position)
+					value += char
+					position += 1
+				}
+				tokenList += new TToken(TWord(), value, lNum, index)
 			}
 		}
 		index += 1
