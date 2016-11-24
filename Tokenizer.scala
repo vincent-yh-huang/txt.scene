@@ -28,53 +28,30 @@
 import scala.collection.mutable.ListBuffer
 import scala.util.matching.Regex
 
-sealed class TType()
-case class TNum() extends TType
-case class TKeyword() extends TType
-case class TWord() extends TType
-case class TScene() extends TType
-case class TNewLine() extends TType
-case class TParen() extends TType
-
-class TToken(t: TType, v: String, l: Int, i: Int) {
-	val tType: TType = t		//token type
-	val tValue: String = v		//token value
-	val tLine: Int = l			//token line
-	val tIndex: Int = i			//token index
-
-	override def toString: String = {
-		var rstr: String = "\t\n{ " + tType + ",\t"
-		rstr += tValue + ",\t" + tLine
-		rstr += ",\t" + tIndex + " }"
-		rstr
-	}
-};
-
 def test(regex: Regex, char: Char): Boolean = (regex findFirstIn char.toString).nonEmpty
 
-case class Failure(reason: String)
-
 def longToken(rRight: Regex, rLeft: Regex = "".r, line: String, 
-	position: Int, lNum: Int, index: Int): Either[Failure, (TToken, Int)] = 
+	position: Int, lNum: Int, index: Int): (TToken, Int) = 
 {
 	var value = ""
 	var pos = position
 	var char = line(pos)
 
 	while (pos < line.length && test(rRight, line(pos))) {
-			//println("\tchar: "+char)
-			//println("\tpos: "+pos)
+			println("\tchar: "+char)
+			println("\tpos: "+pos)
 		char = line(pos)
 		//checks to see if number is properly defined
 		if (test(rLeft, char)) {
-			var errMsg = ("SYNTAX ERROR: ")
-			errMsg += (f"\t'$value$char' @ $lNum:$index")
-			return Left(Failure(errMsg))
+			//var errMsg = ("SYNTAX ERROR: ")
+			//errMsg += (f"\t'$value$char' @ $lNum:$index")
+			println("Error! Returning...")
+			return (new TToken(BadToken(), "", -1, -1), pos)
 		}
 		value += char
 		pos += 1
 	}
-	Right((new TToken(TNum(), value, lNum, index), pos))
+	(new TToken(TNum(), value, lNum, index), pos)
 }
 
 
@@ -127,7 +104,7 @@ def tokenizer(input: Iterator[String]) :ListBuffer[TToken] = {
 					return Iterator()
 				}
 				*/
-				/*
+				///*
 					//println("matches num")
 				var value = ""
 				while (position < line.length && test(rNum.r, line(position))) {
@@ -144,6 +121,18 @@ def tokenizer(input: Iterator[String]) :ListBuffer[TToken] = {
 					position += 1
 				}
 				tokenList += new TToken(TNum(), value, lNum, index)
+				//*/
+				/*
+					println("matches num")
+				var result = longToken(rNum.r, rWord.r, line, 
+					position, lNum, index)
+				if (result._1.tType == BadToken()) {
+					println(result._1.tValue)
+					return ListBuffer()
+				} else {
+					tokenList += result._1
+					position = result._2
+				}
 				*/
 			//TWord() check
 			} else if (test(rWord.r, char)) {
