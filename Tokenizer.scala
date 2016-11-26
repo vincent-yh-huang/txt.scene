@@ -27,6 +27,7 @@
 
 import scala.collection.mutable.ListBuffer
 import scala.util.matching.Regex
+import com.vyhhuang.txt_scene.token
 
 def test(regex: Regex, char: Char): Boolean = (regex findFirstIn char.toString).nonEmpty
 
