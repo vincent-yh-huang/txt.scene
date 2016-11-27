@@ -1,3 +1,4 @@
+package io.github.username.vyyhuang.token
 class Token (t: TType, l: Int, i: Int) {
   val tType: TType = t        //token type
   val tLine: Int = l          //token line

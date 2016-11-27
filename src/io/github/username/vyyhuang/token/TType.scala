@@ -1,3 +1,4 @@
+package io.github.username.vyyhuang.token
 sealed abstract class TType() {
     type T
     val tVal: T
