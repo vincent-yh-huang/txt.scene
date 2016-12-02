@@ -1,4 +1,4 @@
-package io.github.vyhhuang.parser
+package io.github.vyhhuang.txt_scene.parser
 
 class Token(t: TType, l: Int, i: Int) {
   val tType: TType = t //token type

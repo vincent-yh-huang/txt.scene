@@ -1,4 +1,4 @@
-package io.github.vyhhuang.parser
+package io.github.vyhhuang.txt_scene.parser
 
 sealed abstract class TType() {
   type T
